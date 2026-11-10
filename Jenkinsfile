@@ -18,13 +18,16 @@ pipeline {
                 }
             }
         }
-        stage("build") {
+        stage('build image') {
             steps {
                 script {
-                    echo "Building the application..."
+                    echo 'building the docker image...'
+                    buildImage(env.IMAGE_NAME)
+                    dockerLogin()
+                    dockerPush(env.IMAGE_NAME)
                 }
             }
-        }
+        } 
 
         stage("deploy") {
             steps {
