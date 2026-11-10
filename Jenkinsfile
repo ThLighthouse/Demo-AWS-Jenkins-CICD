@@ -22,9 +22,11 @@ pipeline {
         stage("deploy") {
             steps {
                 script {
-                    def dockerCmd = "docker run -p 3080:3080 -d thlighthouse/demo-app:aws-ec2-1.0"
+
                     sshagent(credentials: ['ec2-server-key'], executable: '') {
-                        sh "ssh -o StrictHostKeyChecking=no ubuntu@172.31.32.219 ${dockerCmd}"
+                        def dockerComposeCmd = "docker compose -f /home/ubuntu/docker-compose.yaml up -d"
+                        sh "scp docker-compose.yaml ubuntu@172.31.32.219:/home/ubuntu/"
+                        sh "ssh -o StrictHostKeyChecking=no ubuntu@172.31.32.219 ${dockerComposeCmd}"
                     }
                 }
             }
