@@ -1,12 +1,19 @@
 #!/usr/bin.env groovy
 
+library identifier: 'jenkins-shared-library@master', retriever: modernSCM(
+    [class: 'GitSCMSource',
+    remote: 'https://gitlab.com/alisher.khusainov/jenkins-shared-library.git',
+    credentialsId: 'gitlab-credentials']
+)
+
+
 pipeline {   
     agent any
     tools {
         maven 'maven-3.9'
     }
     environment {
-        IMAGE_NAME = 'thlightouse/demo-app:java-maven-2.0'
+        IMAGE_NAME = 'thlighthouse/demo-app:java-maven-2.0'
     }
 
     stages {
@@ -18,6 +25,14 @@ pipeline {
                 }
             }
         }
+
+        stage('build app') {
+            steps {
+                echo 'Building Java application...'
+                sh 'mvn clean package'
+            }
+        }
+
         stage('build image') {
             steps {
                 script {
