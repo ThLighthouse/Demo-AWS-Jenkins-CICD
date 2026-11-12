@@ -50,33 +50,18 @@ pipeline {
             }
         } 
 
-        stage("deploy") {
+        stage('deploy') {
             steps {
                 script {
-                    echo "deploying docker image to EC2 server"
-
-                    def shellCmd = "bash ./server-cmds.sh ${IMAGE_NAME}"
-                    def ec2Instance = "ubuntu@172.31.32.219"
-
-                    sshagent(credentials: ['ec2-server-key'], executable: '') {
-                        def dockerComposeCmd = "docker compose -f /home/ubuntu/docker-compose.yaml up -d"
-                        sh "scp server-cmds.sh ${ec2Instance}:/home/ubuntu/"
-                        sh "scp docker-compose.yaml ${ec2Instance}:/home/ubuntu/"
-                        sh "ssh -o StrictHostKeyChecking=no ${ec2Instance} ${shellCmd}"
-                    }
+                    deployToEc2(env.IMAGE_NAME)
                 }
             }
-        } 
+        }
         
         stage('commit version update') {
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'github-credentials', passwordVariable:'PASS', usernameVariable:'USER')]) {
-                        sh 'git remote set-url origin https://$USER:$PASS@github.com/ThLighthouse/Demo-AWS-Jenkins-CICD.git'
-                        sh 'git add .'
-                        sh 'git commit -m "ci:version update"'
-                        sh 'git push origin HEAD:main'
-                    }
+                    commitVersionUpdate()
                 }
             }
         }             
