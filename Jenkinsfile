@@ -53,7 +53,7 @@ pipeline {
         stage('deploy') {
             steps {
                 script {
-                    deployToEc2(env.IMAGE_NAME)
+                    deployToEC2(env.IMAGE_NAME)
                 }
             }
         }
