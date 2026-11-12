@@ -50,3 +50,5 @@ stage("deploy") {
             }
         }       
 ```
+
+I also added "Increment version stage" to the Jenkinfile in order to dynamically increment application version. And added "commit version bump" stage in order to rely on the updated version when working with the app

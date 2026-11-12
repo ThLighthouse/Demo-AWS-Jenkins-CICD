@@ -12,11 +12,22 @@ pipeline {
     tools {
         maven 'maven-3.9'
     }
-    environment {
-        IMAGE_NAME = 'thlighthouse/demo-app:java-maven-2.0'
-    }
 
     stages {
+        stage("incremet app version") {
+            steps {
+                script {
+                    echo "Incrementing the application version..."
+                    sh 'mvn build-helper:parse-version versions:set \
+                        -DnewVersion=\\\${parsedVersion.majorVersion}.\\\${parsedVersion.minorVersion}.\\\${parsedVersion.nextIncrementalVersion} \
+                        versions:commit'
+                    def matcher = readFile('pom.xml') =~ '<version>(.+)</version>'
+                    def version = matcher[0][1]
+                    env.IMAGE_NAME = "$version-$BUILD_NUMBER"
+                }
+            }
+        }
+
         stage("test") {
             steps {
                 script {
@@ -60,6 +71,19 @@ pipeline {
                     }
                 }
             }
-        }               
+        } 
+        
+        stage('commit version update') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'github-credentials', passwordVariable:'PASS', usernameVariable:'USER')]) {
+                        sh 'git remote set-url origin https://$USER:$PASS@github.com/ThLighthouse/Demo-AWS-Jenkins-CICD.git'
+                        sh 'git add .'
+                        sh 'git commit -m "ci:version update"'
+                        sh 'git push origin HEAD:main'
+                    }
+                }
+            }
+        }             
     }
 } 
