@@ -132,6 +132,24 @@ The main `Jenkinsfile` keeps the stages visible, while reusable Groovy functions
 
 This made the Jenkinsfile shorter and helped me understand the difference between defining a pipeline stage and implementing reusable pipeline logic.
 
+## GitHub Webhooks and Preventing CI Loops
+
+I configured a GitHub webhook using the **Multibranch Scan Webhook Trigger** plugin to automatically scan the repository when new commits are pushed.
+
+Since the pipeline increments the application version and commits the updated `pom.xml` back to GitHub, this could create an infinite CI loop.
+
+To prevent this, I configured the **Ignore Committer Strategy** plugin in Jenkins with the following settings:
+
+- Ignored author: `jenkins@example.com`
+- Allow builds when a changeset contains non-ignored authors
+- Check only HEAD (latest commit)
+
+I tested the configuration by pushing changes to GitHub. The webhook successfully triggered Jenkins, and the pipeline completed the build, Docker push, EC2 deployment, and version update.
+
+After Jenkins pushed its own version-update commit, the Multibranch Pipeline detected the change but skipped the automatic build because the latest commit was authored by `jenkins@example.com`.
+
+I confirmed this behavior in the Jenkins **Scan Repository Log**. This completed the automated CI/CD workflow without creating an infinite build loop.
+
 ## Issues I worked through
 
 Some of the most useful parts of this demo were troubleshooting issues between different tools:
@@ -146,8 +164,6 @@ Some of the most useful parts of this demo were troubleshooting issues between d
 
 Jenkins also reported a **GitHub commit-status permission warning (HTTP 403)**. This did not block the build or deployment; publishing commit statuses requires separate GitHub token permissions.
 
-One item I have **not verified yet** is the behavior of the GitHub webhook after Jenkins pushes its own version-update commit. No repeated-build loop was observed, but I have not configured Ignore Committer Strategy for this repository, so I am not claiming that loop prevention is in place.
-
 ## Branches and project files
 
 I used the following branches to keep the work organized:
@@ -155,7 +171,7 @@ I used the following branches to keep the work organized:
 - `aws-cicd-part1` — remote deployment of the existing React + Node.js image with `docker run`.
 - `aws-cicd-part2` — Java application deployment with Docker Compose and remote shell commands.
 - `aws-cicd-part3` — dynamic versioning, automatic Git commits, and Shared Library refactoring.
-- `main` — the completed parts are merged here through Pull Requests. Part 3 is kept in its working branch until final review.
+- `main` — contains the completed demo project, with all three parts merged through Pull Requests
 
 The key files are `Jenkinsfile`, `Dockerfile`, `docker-compose.yaml`, `server-cmds.sh`, and `pom.xml`. The reusable Groovy functions are maintained in the separate GitLab Shared Library repository.
 
@@ -171,6 +187,10 @@ The main result for me was understanding how these pieces fit together and being
 
 ## Screenshots of the results
 
-- Jenkins build: /home/alisher/devops-bootcamp-projects/aws-jenkins-cicd/Screenshot_2026-11-12_21-55-28.png
+- Jenkins build:
 
-- The result of the Jenkins build pipeline on EC2 host: /home/alisher/devops-bootcamp-projects/aws-jenkins-cicd/Screenshot_2026-11-12_21-57-06.png
+  ![Successful Jenkins pipeline](screenshots/SuccessfulJenkinsPipeline.png)
+
+- Docker images on the EC2 host:
+
+  ![Docker images on the EC2 host](screenshots/DockerImages.png)
